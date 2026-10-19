@@ -196,6 +196,84 @@ select ok(
   ),
   'anon cannot execute the legal consent RPC'
 );
+select ok(
+  not has_function_privilege(
+    'service_role',
+    'public.accept_current_legal_documents()',
+    'EXECUTE'
+  ),
+  'service_role cannot execute the legal consent RPC'
+);
+select ok(
+  (
+    select routine.prosecdef
+    from pg_proc as routine
+    join pg_namespace as namespace on namespace.oid = routine.pronamespace
+    where namespace.nspname = 'public'
+      and routine.proname = 'accept_current_legal_documents'
+      and routine.pronargs = 0
+  ),
+  'legal consent RPC is SECURITY DEFINER'
+);
+select ok(
+  (
+    select 'search_path=""' = any(coalesce(routine.proconfig, '{}'::text[]))
+    from pg_proc as routine
+    join pg_namespace as namespace on namespace.oid = routine.pronamespace
+    where namespace.nspname = 'public'
+      and routine.proname = 'accept_current_legal_documents'
+      and routine.pronargs = 0
+  ),
+  'legal consent RPC has an empty fixed search_path'
+);
+select ok(
+  not exists (
+    select 1
+    from pg_proc as routine
+    join pg_namespace as namespace on namespace.oid = routine.pronamespace
+    cross join lateral aclexplode(
+      coalesce(routine.proacl, acldefault('f', routine.proowner))
+    ) as privilege
+    where namespace.nspname = 'public'
+      and routine.proname = 'accept_current_legal_documents'
+      and routine.pronargs = 0
+      and privilege.grantee = 0
+      and privilege.privilege_type = 'EXECUTE'
+  ),
+  'PUBLIC has no EXECUTE grant on the legal consent RPC'
+);
+select ok(
+  not exists (
+    select 1
+    from pg_proc as routine
+    join pg_namespace as namespace on namespace.oid = routine.pronamespace
+    cross join lateral aclexplode(
+      coalesce(routine.proacl, acldefault('f', routine.proowner))
+    ) as privilege
+    where namespace.nspname = 'public'
+      and routine.proname = 'accept_current_legal_documents'
+      and routine.pronargs = 0
+      and privilege.privilege_type = 'EXECUTE'
+      and privilege.grantee not in (
+        routine.proowner,
+        'authenticated'::regrole::oid
+      )
+  ),
+  'only the function owner and authenticated have EXECUTE grants'
+);
+select ok(
+  exists (
+    select 1
+    from pg_trigger as trigger
+    join pg_class as class on class.oid = trigger.tgrelid
+    join pg_namespace as namespace on namespace.oid = class.relnamespace
+    where namespace.nspname = 'public'
+      and class.relname = 'user_legal_consents'
+      and trigger.tgname = 'user_legal_consents_force_accepted_at'
+      and not trigger.tgisinternal
+  ),
+  'legal consent INSERTs force accepted_at through a database trigger'
+);
 
 select is(
   (

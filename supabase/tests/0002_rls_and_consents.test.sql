@@ -231,6 +231,51 @@ select is((select count(*) from public.site_services), 1::bigint, 'A sees only s
 select is((select count(*) from public.maintenance_contracts), 1::bigint, 'A sees only contracts in organization A');
 select is((select count(*) from public.maintenance_tasks), 1::bigint, 'A sees only tasks in organization A');
 select is((select count(*) from public.work_logs), 1::bigint, 'A sees only work logs in organization A');
+select is(
+  (
+    select count(*)
+    from public.sites
+    where id = '00000000-0000-0000-0000-000000000b30'
+  ),
+  0::bigint,
+  'A cannot select organization B sites'
+);
+select is(
+  (
+    select count(*)
+    from public.site_services
+    where id = '00000000-0000-0000-0000-000000000b40'
+  ),
+  0::bigint,
+  'A cannot select organization B services'
+);
+select is(
+  (
+    select count(*)
+    from public.maintenance_contracts
+    where id = '00000000-0000-0000-0000-000000000b50'
+  ),
+  0::bigint,
+  'A cannot select organization B contracts'
+);
+select is(
+  (
+    select count(*)
+    from public.maintenance_tasks
+    where id = '00000000-0000-0000-0000-000000000b60'
+  ),
+  0::bigint,
+  'A cannot select organization B tasks'
+);
+select is(
+  (
+    select count(*)
+    from public.work_logs
+    where id = '00000000-0000-0000-0000-000000000b70'
+  ),
+  0::bigint,
+  'A cannot select organization B work logs'
+);
 
 select throws_ok(
   $$
@@ -242,21 +287,172 @@ select throws_ok(
   'A cannot insert into organization B'
 );
 
-select lives_ok(
-  $$
-    update public.clients
-    set name = 'Cross-tenant update'
-    where id = '00000000-0000-0000-0000-000000000b20'
-  $$,
-  'A cross-tenant update affects no visible row'
-);
+create temporary table rls_operation_results (
+  operation text primary key,
+  affected_rows bigint not null
+) on commit drop;
 
-select lives_ok(
-  $$
-    delete from public.clients
-    where id = '00000000-0000-0000-0000-000000000b20'
-  $$,
-  'A cross-tenant delete affects no visible row'
+with affected as (
+  update public.clients
+  set name = 'Cross-tenant update'
+  where id = '00000000-0000-0000-0000-000000000b20'
+  returning 1
+)
+insert into rls_operation_results (operation, affected_rows)
+select 'clients_update', count(*) from affected;
+
+with affected as (
+  delete from public.clients
+  where id = '00000000-0000-0000-0000-000000000b20'
+  returning 1
+)
+insert into rls_operation_results (operation, affected_rows)
+select 'clients_delete', count(*) from affected;
+
+with affected as (
+  update public.sites
+  set name = 'Cross-tenant update'
+  where id = '00000000-0000-0000-0000-000000000b30'
+  returning 1
+)
+insert into rls_operation_results (operation, affected_rows)
+select 'sites_update', count(*) from affected;
+
+with affected as (
+  delete from public.sites
+  where id = '00000000-0000-0000-0000-000000000b30'
+  returning 1
+)
+insert into rls_operation_results (operation, affected_rows)
+select 'sites_delete', count(*) from affected;
+
+with affected as (
+  update public.site_services
+  set provider = 'Cross-tenant update'
+  where id = '00000000-0000-0000-0000-000000000b40'
+  returning 1
+)
+insert into rls_operation_results (operation, affected_rows)
+select 'site_services_update', count(*) from affected;
+
+with affected as (
+  delete from public.site_services
+  where id = '00000000-0000-0000-0000-000000000b40'
+  returning 1
+)
+insert into rls_operation_results (operation, affected_rows)
+select 'site_services_delete', count(*) from affected;
+
+with affected as (
+  update public.maintenance_contracts
+  set name = 'Cross-tenant update'
+  where id = '00000000-0000-0000-0000-000000000b50'
+  returning 1
+)
+insert into rls_operation_results (operation, affected_rows)
+select 'maintenance_contracts_update', count(*) from affected;
+
+with affected as (
+  delete from public.maintenance_contracts
+  where id = '00000000-0000-0000-0000-000000000b50'
+  returning 1
+)
+insert into rls_operation_results (operation, affected_rows)
+select 'maintenance_contracts_delete', count(*) from affected;
+
+with affected as (
+  update public.maintenance_tasks
+  set title = 'Cross-tenant update'
+  where id = '00000000-0000-0000-0000-000000000b60'
+  returning 1
+)
+insert into rls_operation_results (operation, affected_rows)
+select 'maintenance_tasks_update', count(*) from affected;
+
+with affected as (
+  delete from public.maintenance_tasks
+  where id = '00000000-0000-0000-0000-000000000b60'
+  returning 1
+)
+insert into rls_operation_results (operation, affected_rows)
+select 'maintenance_tasks_delete', count(*) from affected;
+
+with affected as (
+  update public.work_logs
+  set title = 'Cross-tenant update'
+  where id = '00000000-0000-0000-0000-000000000b70'
+  returning 1
+)
+insert into rls_operation_results (operation, affected_rows)
+select 'work_logs_update', count(*) from affected;
+
+with affected as (
+  delete from public.work_logs
+  where id = '00000000-0000-0000-0000-000000000b70'
+  returning 1
+)
+insert into rls_operation_results (operation, affected_rows)
+select 'work_logs_delete', count(*) from affected;
+
+select is(
+  (select affected_rows from rls_operation_results where operation = 'clients_update'),
+  0::bigint,
+  'A update affects zero organization B clients'
+);
+select is(
+  (select affected_rows from rls_operation_results where operation = 'clients_delete'),
+  0::bigint,
+  'A delete affects zero organization B clients'
+);
+select is(
+  (select affected_rows from rls_operation_results where operation = 'sites_update'),
+  0::bigint,
+  'A update affects zero organization B sites'
+);
+select is(
+  (select affected_rows from rls_operation_results where operation = 'sites_delete'),
+  0::bigint,
+  'A delete affects zero organization B sites'
+);
+select is(
+  (select affected_rows from rls_operation_results where operation = 'site_services_update'),
+  0::bigint,
+  'A update affects zero organization B services'
+);
+select is(
+  (select affected_rows from rls_operation_results where operation = 'site_services_delete'),
+  0::bigint,
+  'A delete affects zero organization B services'
+);
+select is(
+  (select affected_rows from rls_operation_results where operation = 'maintenance_contracts_update'),
+  0::bigint,
+  'A update affects zero organization B contracts'
+);
+select is(
+  (select affected_rows from rls_operation_results where operation = 'maintenance_contracts_delete'),
+  0::bigint,
+  'A delete affects zero organization B contracts'
+);
+select is(
+  (select affected_rows from rls_operation_results where operation = 'maintenance_tasks_update'),
+  0::bigint,
+  'A update affects zero organization B tasks'
+);
+select is(
+  (select affected_rows from rls_operation_results where operation = 'maintenance_tasks_delete'),
+  0::bigint,
+  'A delete affects zero organization B tasks'
+);
+select is(
+  (select affected_rows from rls_operation_results where operation = 'work_logs_update'),
+  0::bigint,
+  'A update affects zero organization B work logs'
+);
+select is(
+  (select affected_rows from rls_operation_results where operation = 'work_logs_delete'),
+  0::bigint,
+  'A delete affects zero organization B work logs'
 );
 
 select throws_ok(
@@ -378,6 +574,19 @@ select is(
   2::bigint,
   'double submission does not create duplicate consent rows'
 );
+select results_eq(
+  $$
+    select document_version_id::text
+    from public.user_legal_consents
+    order by document_version_id
+  $$,
+  $$
+    values
+      ('00000000-0000-0000-0000-000000000d01'::text),
+      ('00000000-0000-0000-0000-000000000d02'::text)
+  $$,
+  'RPC resolves the current terms and privacy document versions in the database'
+);
 
 reset role;
 set local role authenticated;
@@ -394,6 +603,37 @@ select is(
 );
 
 reset role;
+select set_config('request.jwt.claims', '{}', true);
+
+select throws_ok(
+  $$select * from public.accept_current_legal_documents()$$,
+  '42501',
+  'authentication is required',
+  'legal consent RPC rejects a null auth.uid()'
+);
+
+insert into public.user_legal_consents (
+  id,
+  user_id,
+  document_version_id,
+  accepted_at
+)
+values (
+  '00000000-0000-0000-0000-000000000c01',
+  '00000000-0000-0000-0000-000000000b01',
+  '00000000-0000-0000-0000-000000000d01',
+  '2000-01-01 00:00:00+00'
+);
+
+select is(
+  (
+    select accepted_at
+    from public.user_legal_consents
+    where id = '00000000-0000-0000-0000-000000000c01'
+  ),
+  transaction_timestamp(),
+  'database overwrites a supplied accepted_at with its transaction timestamp'
+);
 
 select is(
   (
