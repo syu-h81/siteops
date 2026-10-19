@@ -28,11 +28,11 @@ npm run supabase:start
 npm run dev
 ```
 
-SupabaseのローカルURLとanon keyは、`npm run supabase:status`で確認して `.env.local` に設定します。
+SupabaseのローカルURLとPublishable Keyは、`npm run supabase:status`で確認して `.env.local` に設定します。
 
 ```dotenv
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<local anon key>
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<local publishable key>
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
@@ -65,7 +65,7 @@ npx playwright install chromium
 
 Supabase CLIの設定は `supabase/config.toml`で管理します。DBスキーマの正は `supabase/migrations/*.sql` です。
 
-Phase 0では、ローカル設定と空のmigration/test/seed基盤のみを用意しています。業務テーブル、RLS、認証処理はPhase 1で実装します。
+Phase 1-Aでは、業務・法務テーブル、RLS、同意履歴RPC、pgTAPテストをmigrationで管理しています。認証画面とオンボーディングは後続のPhase 1で実装します。
 
 ## ブランチ運用
 
