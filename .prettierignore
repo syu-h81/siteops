@@ -1,0 +1,10 @@
+.next
+AGENTS.md
+coverage
+docs/SiteOps_v0.1_requirements.md
+node_modules
+package-lock.json
+playwright-report
+test-results
+supabase/.branches
+supabase/.temp
