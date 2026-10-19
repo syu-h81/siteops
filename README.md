@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SiteOps
 
-## Getting Started
+SiteOpsは、Web制作会社・フリーランス向けのWebサイト保守業務管理SaaSです。
 
-First, run the development server:
+v0.1の仕様は [`docs/SiteOps_v0.1_requirements.md`](docs/SiteOps_v0.1_requirements.md) を参照してください。
+
+## 技術スタック
+
+- Next.js 16 (App Router)
+- React 19 / TypeScript (strict)
+- Tailwind CSS 4 / shadcn/ui
+- Supabase Auth / PostgreSQL / Row Level Security
+- Zod / React Hook Form
+- Vitest / Playwright
+
+## 必要環境
+
+- Node.js 22
+- npm 10以上
+- Docker Desktopまたは互換するDocker環境（ローカルSupabaseを使う場合）
+
+## セットアップ
 
 ```bash
+npm ci
+cp .env.example .env.local
+npm run supabase:start
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+SupabaseのローカルURLとanon keyは、`npm run supabase:status`で確認して `.env.local` に設定します。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```dotenv
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<local anon key>
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`.env.local` や実際のキーはGitにコミットしないでください。service role keyはブラウザーで使用しません。
 
-## Learn More
+## 主なコマンド
 
-To learn more about Next.js, take a look at the following resources:
+| コマンド                  | 用途                           |
+| ------------------------- | ------------------------------ |
+| `npm run dev`             | 開発サーバー起動               |
+| `npm run build`           | 本番ビルド                     |
+| `npm run lint`            | ESLint                         |
+| `npm run typecheck`       | TypeScript型検査               |
+| `npm run test`            | Vitestの単体テスト             |
+| `npm run test:watch`      | Vitestのwatch実行              |
+| `npm run test:e2e`        | Playwright E2Eテスト           |
+| `npm run format`          | Prettierによる整形             |
+| `npm run format:check`    | 整形済みか確認                 |
+| `npm run supabase:start`  | ローカルSupabase起動           |
+| `npm run supabase:stop`   | ローカルSupabase停止           |
+| `npm run supabase:status` | ローカルSupabaseの接続情報表示 |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Playwrightのブラウザーが未導入の場合は、次を実行します。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npx playwright install chromium
+```
 
-## Deploy on Vercel
+## Supabase
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Supabase CLIの設定は `supabase/config.toml`で管理します。DBスキーマの正は `supabase/migrations/*.sql` です。
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Phase 0では、ローカル設定と空のmigration/test/seed基盤のみを用意しています。業務テーブル、RLS、認証処理はPhase 1で実装します。
+
+## ブランチ運用
+
+- `main`: 本番
+- `develop`: 統合
+- `feature/*`: 機能開発
+
+コミット、Push、マージは承認後に実施します。
+
+## CI
+
+GitHub Actionsで以下を実行します。
+
+1. Prettier確認
+2. ESLint
+3. TypeScript型検査
+4. Vitest
+5. production build
