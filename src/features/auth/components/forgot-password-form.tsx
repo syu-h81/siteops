@@ -1,13 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { FormMessage } from "@/features/auth/components/form-message";
 import { getAuthErrorMessage } from "@/features/auth/errors";
 import {
@@ -45,7 +46,7 @@ export function ForgotPasswordForm() {
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="space-y-5"
+      className="space-y-4"
       noValidate
     >
       <FormMessage message={formError} />
@@ -73,21 +74,23 @@ export function ForgotPasswordForm() {
           {...form.register("email")}
         />
         {form.formState.errors.email ? (
-          <p id="forgot-email-error" className="text-destructive text-sm">
+          <FormError id="forgot-email-error">
             {form.formState.errors.email.message}
-          </p>
+          </FormError>
         ) : null}
       </div>
 
       <Button
         type="submit"
-        className="h-10 w-full"
+        className="h-10 w-full sm:h-9"
         disabled={form.formState.isSubmitting || isSent}
+        aria-busy={form.formState.isSubmitting}
       >
         {form.formState.isSubmitting ? (
-          <LoaderCircle aria-hidden="true" className="animate-spin" />
-        ) : null}
-        {form.formState.isSubmitting ? "送信中…" : "再設定メールを送信"}
+          <LoadingIndicator label="送信中…" />
+        ) : (
+          "再設定メールを送信"
+        )}
       </Button>
     </form>
   );

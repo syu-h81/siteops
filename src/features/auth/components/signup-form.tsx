@@ -1,14 +1,17 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoaderCircle, MailCheck } from "lucide-react";
+import { MailCheck } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { FormDescription, FormError } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingIndicator } from "@/components/ui/loading-indicator";
+import { SectionTitle } from "@/components/ui/typography";
 import { FormMessage } from "@/features/auth/components/form-message";
 import { getAuthErrorMessage } from "@/features/auth/errors";
 import { signupSchema, type SignupValues } from "@/features/auth/schemas";
@@ -43,21 +46,19 @@ export function SignupForm() {
 
   if (submittedEmail) {
     return (
-      <div className="space-y-5 text-center" role="status">
-        <MailCheck
-          aria-hidden="true"
-          className="text-primary mx-auto size-12"
-        />
+      <div className="space-y-4 text-center" role="status">
+        <MailCheck aria-hidden="true" className="text-success mx-auto size-8" />
         <div className="space-y-2">
-          <h2 className="text-lg font-semibold">確認メールを送信しました</h2>
+          <SectionTitle>確認メールを送信しました</SectionTitle>
           <p className="text-muted-foreground text-sm leading-6">
-            {submittedEmail}{" "}
+            <span className="break-all">{submittedEmail}</span>{" "}
             宛てのメールを開き、メールアドレスを確認してください。
           </p>
         </div>
         <Button
           type="button"
           variant="outline"
+          className="h-10 sm:h-9"
           onClick={() => setSubmittedEmail(null)}
         >
           メールアドレスを修正する
@@ -69,7 +70,7 @@ export function SignupForm() {
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="space-y-5"
+      className="space-y-4"
       noValidate
     >
       <FormMessage message={formError} />
@@ -88,9 +89,9 @@ export function SignupForm() {
           {...form.register("email")}
         />
         {form.formState.errors.email ? (
-          <p id="signup-email-error" className="text-destructive text-sm">
+          <FormError id="signup-email-error">
             {form.formState.errors.email.message}
-          </p>
+          </FormError>
         ) : null}
       </div>
 
@@ -104,13 +105,13 @@ export function SignupForm() {
           aria-describedby="signup-password-help signup-password-error"
           {...form.register("password")}
         />
-        <p id="signup-password-help" className="text-muted-foreground text-xs">
+        <FormDescription id="signup-password-help">
           8文字以上で設定してください。
-        </p>
+        </FormDescription>
         {form.formState.errors.password ? (
-          <p id="signup-password-error" className="text-destructive text-sm">
+          <FormError id="signup-password-error">
             {form.formState.errors.password.message}
-          </p>
+          </FormError>
         ) : null}
       </div>
 
@@ -129,29 +130,28 @@ export function SignupForm() {
           {...form.register("passwordConfirmation")}
         />
         {form.formState.errors.passwordConfirmation ? (
-          <p
-            id="signup-password-confirmation-error"
-            className="text-destructive text-sm"
-          >
+          <FormError id="signup-password-confirmation-error">
             {form.formState.errors.passwordConfirmation.message}
-          </p>
+          </FormError>
         ) : null}
       </div>
 
-      <Alert>
+      <Alert variant="info">
         Phase
         1-Bでは利用規約・プライバシーポリシーへの同意記録は行いません。正式文書の公開後、業務機能を利用する前に同意が必要になります。
       </Alert>
 
       <Button
         type="submit"
-        className="h-10 w-full"
+        className="h-10 w-full sm:h-9"
         disabled={form.formState.isSubmitting}
+        aria-busy={form.formState.isSubmitting}
       >
         {form.formState.isSubmitting ? (
-          <LoaderCircle aria-hidden="true" className="animate-spin" />
-        ) : null}
-        {form.formState.isSubmitting ? "登録中…" : "アカウントを作成"}
+          <LoadingIndicator label="登録中…" />
+        ) : (
+          "アカウントを作成"
+        )}
       </Button>
     </form>
   );

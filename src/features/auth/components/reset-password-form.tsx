@@ -1,13 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
+import { FormDescription, FormError } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { resetPassword } from "@/features/auth/actions";
 import { FormMessage } from "@/features/auth/components/form-message";
 import {
@@ -34,7 +35,7 @@ export function ResetPasswordForm() {
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="space-y-5"
+      className="space-y-4"
       noValidate
     >
       <FormMessage message={formError} />
@@ -49,13 +50,13 @@ export function ResetPasswordForm() {
           aria-describedby="reset-password-help reset-password-error"
           {...form.register("password")}
         />
-        <p id="reset-password-help" className="text-muted-foreground text-xs">
+        <FormDescription id="reset-password-help">
           8文字以上で設定してください。
-        </p>
+        </FormDescription>
         {form.formState.errors.password ? (
-          <p id="reset-password-error" className="text-destructive text-sm">
+          <FormError id="reset-password-error">
             {form.formState.errors.password.message}
-          </p>
+          </FormError>
         ) : null}
       </div>
 
@@ -76,24 +77,23 @@ export function ResetPasswordForm() {
           {...form.register("passwordConfirmation")}
         />
         {form.formState.errors.passwordConfirmation ? (
-          <p
-            id="reset-password-confirmation-error"
-            className="text-destructive text-sm"
-          >
+          <FormError id="reset-password-confirmation-error">
             {form.formState.errors.passwordConfirmation.message}
-          </p>
+          </FormError>
         ) : null}
       </div>
 
       <Button
         type="submit"
-        className="h-10 w-full"
+        className="h-10 w-full sm:h-9"
         disabled={form.formState.isSubmitting}
+        aria-busy={form.formState.isSubmitting}
       >
         {form.formState.isSubmitting ? (
-          <LoaderCircle aria-hidden="true" className="animate-spin" />
-        ) : null}
-        {form.formState.isSubmitting ? "更新中…" : "パスワードを更新"}
+          <LoadingIndicator label="更新中…" />
+        ) : (
+          "パスワードを更新"
+        )}
       </Button>
     </form>
   );
