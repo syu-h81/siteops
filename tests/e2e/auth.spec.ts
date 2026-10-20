@@ -71,6 +71,28 @@ test("未認証ユーザーを保護ページからログインへ戻す", async
   await expect(page.getByRole("heading", { name: "ログイン" })).toBeVisible();
 });
 
+test("認証画面は375px幅で横スクロールしない", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+
+  for (const path of [
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/reset-password",
+    "/auth/error",
+  ]) {
+    await page.goto(path);
+
+    const hasHorizontalOverflow = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth >
+        document.documentElement.clientWidth,
+    );
+
+    expect(hasHorizontalOverflow, `${path} で横スクロールが発生`).toBe(false);
+  }
+});
+
 test("不正な認証情報を日本語で表示する", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("メールアドレス").fill("missing@example.test");

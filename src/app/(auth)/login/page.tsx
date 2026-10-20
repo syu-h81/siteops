@@ -34,7 +34,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           アカウントをお持ちでない方は{" "}
           <Link
             href="/signup"
-            className="text-primary font-medium hover:underline"
+            className="text-primary hover:text-primary-hover focus-visible:ring-ring rounded-sm font-medium underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-offset-2"
           >
             新規登録
           </Link>
