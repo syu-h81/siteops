@@ -1,15 +1,16 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { FormMessage } from "@/features/auth/components/form-message";
 import { getAuthErrorMessage } from "@/features/auth/errors";
 import { loginSchema, type LoginValues } from "@/features/auth/schemas";
@@ -46,7 +47,7 @@ export function LoginForm({ nextPath, notice }: LoginFormProps) {
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="space-y-5"
+      className="space-y-4"
       noValidate
     >
       <FormMessage message={notice} variant="success" />
@@ -66,9 +67,9 @@ export function LoginForm({ nextPath, notice }: LoginFormProps) {
           {...form.register("email")}
         />
         {form.formState.errors.email ? (
-          <p id="login-email-error" className="text-destructive text-sm">
+          <FormError id="login-email-error">
             {form.formState.errors.email.message}
-          </p>
+          </FormError>
         ) : null}
       </div>
 
@@ -77,7 +78,7 @@ export function LoginForm({ nextPath, notice }: LoginFormProps) {
           <Label htmlFor="login-password">パスワード</Label>
           <Link
             href="/forgot-password"
-            className="text-primary text-sm hover:underline"
+            className="text-primary hover:text-primary-hover focus-visible:ring-ring rounded-sm text-sm font-medium underline-offset-4 transition-colors duration-150 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transition-none"
           >
             パスワードを忘れた方
           </Link>
@@ -93,21 +94,23 @@ export function LoginForm({ nextPath, notice }: LoginFormProps) {
           {...form.register("password")}
         />
         {form.formState.errors.password ? (
-          <p id="login-password-error" className="text-destructive text-sm">
+          <FormError id="login-password-error">
             {form.formState.errors.password.message}
-          </p>
+          </FormError>
         ) : null}
       </div>
 
       <Button
         type="submit"
-        className="h-10 w-full"
+        className="h-10 w-full sm:h-9"
         disabled={form.formState.isSubmitting}
+        aria-busy={form.formState.isSubmitting}
       >
         {form.formState.isSubmitting ? (
-          <LoaderCircle aria-hidden="true" className="animate-spin" />
-        ) : null}
-        {form.formState.isSubmitting ? "ログイン中…" : "ログイン"}
+          <LoadingIndicator label="ログイン中…" />
+        ) : (
+          "ログイン"
+        )}
       </Button>
     </form>
   );

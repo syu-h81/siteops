@@ -15,13 +15,13 @@ export default function AuthErrorPage() {
         <div className="flex flex-wrap justify-center gap-4">
           <Link
             href="/signup"
-            className="text-primary font-medium hover:underline"
+            className="text-primary hover:text-primary-hover focus-visible:ring-ring rounded-sm font-medium underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-offset-2"
           >
             新規登録へ戻る
           </Link>
           <Link
             href="/forgot-password"
-            className="text-primary font-medium hover:underline"
+            className="text-primary hover:text-primary-hover focus-visible:ring-ring rounded-sm font-medium underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-offset-2"
           >
             再設定メールを送る
           </Link>
