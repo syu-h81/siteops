@@ -65,7 +65,9 @@ npx playwright install chromium
 
 Supabase CLIの設定は `supabase/config.toml`で管理します。DBスキーマの正は `supabase/migrations/*.sql` です。
 
-Phase 1-Aでは、業務・法務テーブル、RLS、同意履歴RPC、pgTAPテストをmigrationで管理しています。認証画面とオンボーディングは後続のPhase 1で実装します。
+Phase 1-Aでは、業務・法務テーブル、RLS、同意履歴RPC、pgTAPテストをmigrationで管理しています。Phase 1-Bでは、メール確認を必須とする認証、パスワード再設定、Cookieベースのセッション更新を実装しています。組織作成と法務同意はPhase 1-Cで実装します。
+
+ローカルの確認メールとパスワード再設定メールはMailpit（`http://127.0.0.1:54324`）で確認できます。ホスト環境へ反映する際は、`supabase/templates` と同等のメールテンプレートとRedirect URLをSupabase Dashboard側にも設定してください。
 
 ## ブランチ運用
 
