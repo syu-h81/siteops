@@ -10,6 +10,9 @@ import {
 } from "@/components/ui/card";
 import { PageTitle, SectionTitle } from "@/components/ui/typography";
 import { LogoutButton } from "@/features/auth/components/logout-button";
+import { LegalConsentForm } from "@/features/onboarding/components/legal-consent-form";
+import { OrganizationForm } from "@/features/onboarding/components/organization-form";
+import type { LegalDocumentMetadata } from "@/lib/legal/document-policy";
 import type { OnboardingStatus } from "@/lib/onboarding/status";
 
 type VisibleOnboardingStatus = Exclude<
@@ -18,10 +21,14 @@ type VisibleOnboardingStatus = Exclude<
 >;
 
 type OnboardingStatusCardProps = {
+  legalDocuments?: readonly LegalDocumentMetadata[];
   status: VisibleOnboardingStatus;
 };
 
-function StatusContent({ status }: OnboardingStatusCardProps) {
+function StatusContent({
+  legalDocuments = [],
+  status,
+}: OnboardingStatusCardProps) {
   if (status === "legal_unavailable") {
     return (
       <>
@@ -43,6 +50,21 @@ function StatusContent({ status }: OnboardingStatusCardProps) {
   }
 
   if (status === "consent_required") {
+    const termsDocument = legalDocuments.find(
+      (document) => document.document_type === "terms",
+    );
+    const privacyDocument = legalDocuments.find(
+      (document) => document.document_type === "privacy",
+    );
+
+    if (!termsDocument || !privacyDocument) {
+      return (
+        <Alert variant="warning">
+          法務文書の状態が変更されました。画面を再読み込みしてください。
+        </Alert>
+      );
+    }
+
     return (
       <>
         <FileText aria-hidden="true" className="text-info size-8" />
@@ -52,9 +74,10 @@ function StatusContent({ status }: OnboardingStatusCardProps) {
             利用規約とプライバシーポリシーへの同意が必要です。
           </p>
         </div>
-        <Alert variant="info">
-          同意手続は現在準備中です。この画面ではまだ同意を記録しません。
-        </Alert>
+        <LegalConsentForm
+          privacyDocument={privacyDocument}
+          termsDocument={termsDocument}
+        />
       </>
     );
   }
@@ -68,14 +91,15 @@ function StatusContent({ status }: OnboardingStatusCardProps) {
           SiteOpsを利用する組織の初期設定が必要です。
         </p>
       </div>
-      <Alert variant="info">
-        組織作成機能は現在準備中です。この画面ではまだ組織を作成しません。
-      </Alert>
+      <OrganizationForm />
     </>
   );
 }
 
-export function OnboardingStatusCard({ status }: OnboardingStatusCardProps) {
+export function OnboardingStatusCard({
+  legalDocuments,
+  status,
+}: OnboardingStatusCardProps) {
   return (
     <main className="flex min-h-svh flex-1 items-center justify-center px-4 py-12 sm:px-6">
       <div className="w-full max-w-lg">
@@ -90,7 +114,7 @@ export function OnboardingStatusCard({ status }: OnboardingStatusCardProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <StatusContent status={status} />
+            <StatusContent legalDocuments={legalDocuments} status={status} />
           </CardContent>
           <CardFooter className="border-t pt-6">
             <LogoutButton />

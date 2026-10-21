@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { OnboardingStatusCard } from "@/features/onboarding/components/onboarding-status-card";
+import { getUsableCurrentLegalDocuments } from "@/lib/legal/documents";
 import { getOnboardingStatus } from "@/lib/onboarding/get-onboarding-status";
 import { getOnboardingPageRedirect } from "@/lib/onboarding/navigation";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "初期設定" };
 
@@ -15,5 +17,12 @@ export default async function OnboardingPage() {
     redirect(redirectPath ?? "/login");
   }
 
-  return <OnboardingStatusCard status={status} />;
+  const legalDocuments =
+    status === "consent_required"
+      ? await getUsableCurrentLegalDocuments(await createClient())
+      : [];
+
+  return (
+    <OnboardingStatusCard legalDocuments={legalDocuments} status={status} />
+  );
 }

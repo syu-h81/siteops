@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getUsableCurrentLegalDocuments } from "@/lib/legal/documents";
 import { createClient } from "@/lib/supabase/server";
 import {
   resolveOnboardingStatus,
@@ -25,20 +26,13 @@ export async function getOnboardingStatus(): Promise<OnboardingStatus> {
     return "unauthenticated";
   }
 
-  const currentTime = new Date().toISOString();
-  const { data: legalDocuments, error: legalDocumentsError } = await supabase
-    .from("legal_document_versions")
-    .select("id, document_type")
-    .eq("is_current", true)
-    .in("document_type", ["terms", "privacy"])
-    .lte("published_at", currentTime)
-    .lte("effective_at", currentTime);
+  let currentLegalDocuments: CurrentLegalDocument[];
 
-  if (legalDocumentsError) {
+  try {
+    currentLegalDocuments = await getUsableCurrentLegalDocuments(supabase);
+  } catch {
     throw new OnboardingStateError();
   }
-
-  const currentLegalDocuments: CurrentLegalDocument[] = legalDocuments;
   const legalStatus = resolveOnboardingStatus({
     consentDocumentVersionIds: [],
     currentLegalDocuments,
