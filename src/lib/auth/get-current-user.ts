@@ -16,6 +16,6 @@ export async function redirectAuthenticatedUser() {
   const user = await getCurrentUser();
 
   if (user) {
-    redirect("/");
+    redirect("/onboarding");
   }
 }

@@ -174,7 +174,27 @@ test("メール確認からログインとパスワード再設定まで完了�
     "メールアドレスの確認",
   );
   await page.goto(confirmationLink);
-  await expect(page.getByText("認証が完了しています")).toBeVisible();
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(
+    page.getByRole("heading", { name: "SiteOpsの初期設定" }),
+  ).toBeVisible();
+  await expect(page.getByText("正式な法務文書を準備しています")).toBeVisible();
+  await expect(page.getByRole("checkbox")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: /同意|組織を作成/ }),
+  ).toHaveCount(0);
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  const onboardingHasHorizontalOverflow = await page.evaluate(
+    () =>
+      document.documentElement.scrollWidth >
+      document.documentElement.clientWidth,
+  );
+  expect(onboardingHasHorizontalOverflow).toBe(false);
+
+  await page.goto("/dashboard");
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page.getByText("正式な法務文書を準備しています")).toBeVisible();
 
   await page.goto("/reset-password");
   await expect(
@@ -185,8 +205,7 @@ test("メール確認からログインとパスワード再設定まで完了�
   ).toHaveCount(0);
 
   await page.goto("/login");
-  await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByText("認証が完了しています")).toBeVisible();
+  await expect(page).toHaveURL(/\/onboarding$/);
 
   await page.getByRole("button", { name: "ログアウト" }).click();
   await expect(page).toHaveURL(/\/login$/);
@@ -194,7 +213,7 @@ test("メール確認からログインとパスワード再設定まで完了�
   await page.getByLabel("メールアドレス").fill(email);
   await page.getByLabel("パスワード", { exact: true }).fill(initialPassword);
   await page.getByRole("button", { name: "ログイン" }).click();
-  await expect(page.getByText("認証が完了しています")).toBeVisible();
+  await expect(page).toHaveURL(/\/onboarding$/);
 
   const staleContext = await browser.newContext();
   const stalePage = await staleContext.newPage();
@@ -204,7 +223,7 @@ test("メール確認からログインとパスワード再設定まで完了�
     .getByLabel("パスワード", { exact: true })
     .fill(initialPassword);
   await stalePage.getByRole("button", { name: "ログイン" }).click();
-  await expect(stalePage.getByText("認証が完了しています")).toBeVisible();
+  await expect(stalePage).toHaveURL(/\/onboarding$/);
 
   await page.getByRole("button", { name: "ログアウト" }).click();
   await page.getByRole("link", { name: "パスワードを忘れた方" }).click();
@@ -248,7 +267,7 @@ test("メール確認からログインとパスワード再設定まで完了�
   await page.getByLabel("メールアドレス").fill(email);
   await page.getByLabel("パスワード", { exact: true }).fill(newPassword);
   await page.getByRole("button", { name: "ログイン" }).click();
-  await expect(page.getByText("認証が完了しています")).toBeVisible();
+  await expect(page).toHaveURL(/\/onboarding$/);
 
   await page.goto(recoveryLink);
   await page
@@ -259,5 +278,5 @@ test("メール確認からログインとパスワード再設定まで完了�
   await expect(page.getByText(/再設定リンクが無効か/)).toBeVisible();
 
   await page.getByRole("link", { name: "ログインへ戻る" }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/login$/);
 });

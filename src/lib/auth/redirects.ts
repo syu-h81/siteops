@@ -1,4 +1,4 @@
-const DEFAULT_REDIRECT_PATH = "/";
+const DEFAULT_REDIRECT_PATH = "/onboarding";
 
 export function getSafeRedirectPath(
   value: string | null | undefined,
