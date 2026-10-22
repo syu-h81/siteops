@@ -215,9 +215,23 @@ select set_config(
 );
 
 select is(
-  (select count(*) from public.accept_current_legal_documents()),
+  (
+    select count(*)
+    from public.accept_legal_documents(
+      '00000000-0000-0000-0000-00000000d001',
+      (
+        select content_hash from public.legal_document_versions
+        where id = '00000000-0000-0000-0000-00000000d001'
+      ),
+      '00000000-0000-0000-0000-00000000d002',
+      (
+        select content_hash from public.legal_document_versions
+        where id = '00000000-0000-0000-0000-00000000d002'
+      )
+    )
+  ),
   2::bigint,
-  'the existing RPC records both current legal consents before onboarding'
+  'the new RPC records both current legal consents before onboarding'
 );
 
 select lives_ok(
@@ -299,7 +313,21 @@ select set_config(
 );
 
 select is(
-  (select count(*) from public.accept_current_legal_documents()),
+  (
+    select count(*)
+    from public.accept_legal_documents(
+      '00000000-0000-0000-0000-00000000d001',
+      (
+        select content_hash from public.legal_document_versions
+        where id = '00000000-0000-0000-0000-00000000d001'
+      ),
+      '00000000-0000-0000-0000-00000000d002',
+      (
+        select content_hash from public.legal_document_versions
+        where id = '00000000-0000-0000-0000-00000000d002'
+      )
+    )
+  ),
   2::bigint,
   'a user accepts the first current legal document versions'
 );
@@ -464,7 +492,21 @@ select set_config(
 );
 
 select is(
-  (select count(*) from public.accept_current_legal_documents()),
+  (
+    select count(*)
+    from public.accept_legal_documents(
+      '00000000-0000-0000-0000-00000000d005',
+      (
+        select content_hash from public.legal_document_versions
+        where id = '00000000-0000-0000-0000-00000000d005'
+      ),
+      '00000000-0000-0000-0000-00000000d002',
+      (
+        select content_hash from public.legal_document_versions
+        where id = '00000000-0000-0000-0000-00000000d002'
+      )
+    )
+  ),
   2::bigint,
   'organization B owner accepts the latest current documents'
 );
@@ -487,6 +529,26 @@ select set_config(
   'request.jwt.claims',
   '{"sub":"00000000-0000-0000-0000-000000000006","role":"authenticated"}',
   true
+);
+
+select is(
+  (
+    select count(*)
+    from public.accept_legal_documents(
+      '00000000-0000-0000-0000-00000000d005',
+      (
+        select content_hash from public.legal_document_versions
+        where id = '00000000-0000-0000-0000-00000000d005'
+      ),
+      '00000000-0000-0000-0000-00000000d002',
+      (
+        select content_hash from public.legal_document_versions
+        where id = '00000000-0000-0000-0000-00000000d002'
+      )
+    )
+  ),
+  2::bigint,
+  'organization A owner renews consent before business-data access'
 );
 
 select is(
