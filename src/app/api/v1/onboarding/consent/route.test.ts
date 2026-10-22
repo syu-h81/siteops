@@ -25,21 +25,27 @@ vi.mock("@/lib/legal/documents", () => ({
 
 import { POST } from "@/app/api/v1/onboarding/consent/route";
 
+const termsDocumentId = "00000000-0000-4000-8000-000000000001";
+const privacyDocumentId = "00000000-0000-4000-8000-000000000002";
+const termsContentHash = "a".repeat(64);
+const privacyContentHash = "b".repeat(64);
 const documents = [
   {
-    content: "terms",
-    content_hash: "a".repeat(64),
-    content_path: "docs/legal/terms_v1.0.md",
+    content_hash: termsContentHash,
+    content_markdown: "# 利用規約\n",
     document_type: "terms" as const,
-    id: "terms-1",
+    effective_at: "2026-01-01T00:00:00.000Z",
+    id: termsDocumentId,
+    published_at: "2026-01-01T00:00:00.000Z",
     version: "1.0",
   },
   {
-    content: "privacy",
-    content_hash: "b".repeat(64),
-    content_path: "docs/legal/privacy_v1.0.md",
+    content_hash: privacyContentHash,
+    content_markdown: "# プライバシーポリシー\n",
     document_type: "privacy" as const,
-    id: "privacy-1",
+    effective_at: "2026-01-01T00:00:00.000Z",
+    id: privacyDocumentId,
+    published_at: "2026-01-01T00:00:00.000Z",
     version: "1.0",
   },
 ];
@@ -63,7 +69,7 @@ function createSupabaseClient({
   rpcError = null,
   user = { id: "user-1" },
 }: {
-  rpcError?: { message: string } | null;
+  rpcError?: { code?: string; message: string } | null;
   user?: { id: string } | null;
 } = {}) {
   const rpc = vi.fn().mockResolvedValue({ error: rpcError });
@@ -82,10 +88,12 @@ function createSupabaseClient({
 }
 
 const validInput = {
-  acceptPrivacy: true,
-  acceptTerms: true,
-  privacyVersion: "1.0",
-  termsVersion: "1.0",
+  privacyAccepted: true,
+  privacyContentHash,
+  privacyDocumentId,
+  termsAccepted: true,
+  termsContentHash,
+  termsDocumentId,
 };
 
 describe("POST /api/v1/onboarding/consent", () => {
@@ -104,12 +112,16 @@ describe("POST /api/v1/onboarding/consent", () => {
     expect(mocks.getUsableCurrentLegalDocuments).not.toHaveBeenCalled();
   });
 
-  it("チェック未完了の送信を拒否する", async () => {
-    const response = await POST(
-      request({ ...validInput, acceptPrivacy: false }),
+  it("片方だけの同意と余計な項目を拒否する", async () => {
+    const uncheckedResponse = await POST(
+      request({ ...validInput, privacyAccepted: false }),
+    );
+    const extraFieldResponse = await POST(
+      request({ ...validInput, userId: "attacker-controlled" }),
     );
 
-    expect(response.status).toBe(400);
+    expect(uncheckedResponse.status).toBe(400);
+    expect(extraFieldResponse.status).toBe(400);
     expect(mocks.getUsableCurrentLegalDocuments).not.toHaveBeenCalled();
   });
 
@@ -122,16 +134,17 @@ describe("POST /api/v1/onboarding/consent", () => {
     expect((await response.json()).error.code).toBe("legal_unavailable");
   });
 
-  it("表示後に文書バージョンが変わった場合は再確認を求める", async () => {
-    const response = await POST(
-      request({ ...validInput, termsVersion: "0.9" }),
-    );
+  it.each([
+    ["文書ID", { termsDocumentId: "00000000-0000-4000-8000-000000000099" }],
+    ["本文ハッシュ", { privacyContentHash: "c".repeat(64) }],
+  ])("表示後に%sが変わった場合は409を返す", async (_label, changed) => {
+    const response = await POST(request({ ...validInput, ...changed }));
 
     expect(response.status).toBe(409);
     expect((await response.json()).error.code).toBe("legal_documents_changed");
   });
 
-  it("既存RPCで同意し、状態を再確認する", async () => {
+  it("新RPCへ表示文書の4つの期待値を渡し、状態を再確認する", async () => {
     const { rpc } = createSupabaseClient();
     mocks.getOnboardingStatus
       .mockResolvedValueOnce("consent_required")
@@ -140,7 +153,13 @@ describe("POST /api/v1/onboarding/consent", () => {
     const response = await POST(request(validInput));
 
     expect(response.status).toBe(200);
-    expect(rpc).toHaveBeenCalledWith("accept_current_legal_documents");
+    expect(rpc).toHaveBeenCalledExactlyOnceWith("accept_legal_documents", {
+      p_privacy_content_hash: privacyContentHash,
+      p_privacy_document_id: privacyDocumentId,
+      p_terms_content_hash: termsContentHash,
+      p_terms_document_id: termsDocumentId,
+    });
+    expect(rpc).not.toHaveBeenCalledWith("accept_current_legal_documents");
     expect(await response.json()).toEqual({
       data: { status: "organization_required" },
     });
@@ -156,7 +175,33 @@ describe("POST /api/v1/onboarding/consent", () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
-  it("DBエラーの内部情報をレスポンスへ含めない", async () => {
+  it("RPC内で文書が切り替わった場合は409を返す", async () => {
+    createSupabaseClient({
+      rpcError: { code: "P0001", message: "database detail" },
+    });
+    mocks.getOnboardingStatus.mockResolvedValue("consent_required");
+
+    const response = await POST(request(validInput));
+    const body = JSON.stringify(await response.json());
+
+    expect(response.status).toBe(409);
+    expect(body).toContain("legal_documents_changed");
+    expect(body).not.toContain("database detail");
+  });
+
+  it("DB取得エラーを文書未登録に変換せず内部情報を隠す", async () => {
+    mocks.getUsableCurrentLegalDocuments.mockRejectedValue(
+      new Error("secret query detail"),
+    );
+
+    const response = await POST(request(validInput));
+    const body = JSON.stringify(await response.json());
+
+    expect(response.status).toBe(500);
+    expect(body).not.toContain("secret query detail");
+  });
+
+  it("RPCエラーの内部情報をレスポンスへ含めない", async () => {
     createSupabaseClient({ rpcError: { message: "secret database detail" } });
     mocks.getOnboardingStatus.mockResolvedValue("consent_required");
 

@@ -15,4 +15,14 @@ describe("法務文書本文", () => {
     expect(markup).not.toContain("<script>");
     expect(markup).not.toContain("dangerouslySetInnerHTML");
   });
+
+  it("Markdown内の危険なURLをリンクとして実行しない", () => {
+    const markup = renderToStaticMarkup(
+      <LegalDocumentContent content="[外部リンク](javascript:alert('xss'))" />,
+    );
+
+    expect(markup).not.toContain("<a");
+    expect(markup).not.toContain('href="javascript:');
+    expect(markup).toContain("javascript:alert");
+  });
 });

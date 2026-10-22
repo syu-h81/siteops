@@ -1,22 +1,28 @@
 import "server-only";
 
-import { readFile } from "node:fs/promises";
-
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
-  getLegalDocumentFilePath,
   hasMatchingContentHash,
-  isFormalLegalDocument,
   isLegalDocumentType,
-  type LegalDocumentMetadata,
   type LegalDocumentType,
 } from "@/lib/legal/document-policy";
 import type { Database } from "@/types/database.types";
 
-export type LegalDocument = LegalDocumentMetadata & {
-  content: string;
+const MAX_CONTENT_BYTES = 1024 * 1024;
+const SHA_256_PATTERN = /^[0-9a-f]{64}$/;
+
+export type LegalDocument = {
+  content_hash: string;
+  content_markdown: string;
+  document_type: LegalDocumentType;
+  effective_at: string;
+  id: string;
+  published_at: string;
+  version: string;
 };
+
+export type LegalDocumentMetadata = Omit<LegalDocument, "content_markdown">;
 
 export class LegalDocumentStateError extends Error {
   constructor() {
@@ -25,68 +31,55 @@ export class LegalDocumentStateError extends Error {
   }
 }
 
-export async function getCurrentLegalDocuments(
-  supabase: SupabaseClient<Database>,
-  currentTime = new Date(),
-): Promise<LegalDocumentMetadata[]> {
-  const { data, error } = await supabase
-    .from("legal_document_versions")
-    .select("id, document_type, version, content_path, content_hash")
-    .eq("is_current", true)
-    .in("document_type", ["terms", "privacy"])
-    .lte("published_at", currentTime.toISOString())
-    .lte("effective_at", currentTime.toISOString());
-
-  if (error) {
-    throw new LegalDocumentStateError();
-  }
-
-  return data.flatMap((document) => {
-    if (!isLegalDocumentType(document.document_type)) {
-      return [];
-    }
-
-    const metadata: LegalDocumentMetadata = {
-      ...document,
-      document_type: document.document_type,
-    };
-
-    return isFormalLegalDocument(metadata) ? [metadata] : [];
-  });
-}
-
-export async function loadLegalDocument(
-  document: LegalDocumentMetadata,
-): Promise<LegalDocument | null> {
-  const filePath = getLegalDocumentFilePath(document.content_path);
-
-  if (!filePath || !isFormalLegalDocument(document)) {
-    return null;
-  }
-
-  try {
-    const content = await readFile(filePath, "utf8");
-
-    if (!hasMatchingContentHash(content, document.content_hash)) {
-      return null;
-    }
-
-    return { ...document, content };
-  } catch {
-    return null;
-  }
+function hasCanonicalMarkdown(content: string) {
+  return (
+    content.trim().length > 0 &&
+    Buffer.byteLength(content, "utf8") <= MAX_CONTENT_BYTES &&
+    !content.includes("\r") &&
+    content.endsWith("\n") &&
+    !content.endsWith("\n\n")
+  );
 }
 
 export async function getUsableCurrentLegalDocuments(
   supabase: SupabaseClient<Database>,
   currentTime = new Date(),
 ): Promise<LegalDocument[]> {
-  const documents = await getCurrentLegalDocuments(supabase, currentTime);
-  const loadedDocuments = await Promise.all(documents.map(loadLegalDocument));
+  const currentTimestamp = currentTime.toISOString();
+  const { data, error } = await supabase
+    .from("legal_document_versions")
+    .select(
+      "id, document_type, version, content_markdown, content_hash, published_at, effective_at",
+    )
+    .eq("publication_status", "published")
+    .eq("is_current", true)
+    .in("document_type", ["terms", "privacy"])
+    .lte("published_at", currentTimestamp)
+    .lte("effective_at", currentTimestamp);
 
-  return loadedDocuments.filter(
-    (document): document is LegalDocument => document !== null,
-  );
+  if (error) {
+    throw new LegalDocumentStateError();
+  }
+
+  return data.flatMap((document) => {
+    if (
+      !isLegalDocumentType(document.document_type) ||
+      typeof document.content_markdown !== "string" ||
+      !hasCanonicalMarkdown(document.content_markdown) ||
+      !SHA_256_PATTERN.test(document.content_hash) ||
+      !hasMatchingContentHash(document.content_markdown, document.content_hash)
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        ...document,
+        content_markdown: document.content_markdown,
+        document_type: document.document_type,
+      },
+    ];
+  });
 }
 
 export function findLegalDocument(

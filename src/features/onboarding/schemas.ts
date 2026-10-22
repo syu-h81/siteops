@@ -1,13 +1,16 @@
 import { z } from "zod";
 
-const legalVersionSchema = z.string().trim().min(1).max(50);
+const legalDocumentIdSchema = z.string().uuid();
+const legalContentHashSchema = z.string().regex(/^[0-9a-f]{64}$/);
 
 export const legalConsentSchema = z
   .object({
-    acceptPrivacy: z.boolean().refine((value) => value),
-    acceptTerms: z.boolean().refine((value) => value),
-    privacyVersion: legalVersionSchema,
-    termsVersion: legalVersionSchema,
+    privacyAccepted: z.boolean().refine((value) => value),
+    privacyContentHash: legalContentHashSchema,
+    privacyDocumentId: legalDocumentIdSchema,
+    termsAccepted: z.boolean().refine((value) => value),
+    termsContentHash: legalContentHashSchema,
+    termsDocumentId: legalDocumentIdSchema,
   })
   .strict();
 

@@ -15,7 +15,7 @@ import {
   legalConsentSchema,
   type LegalConsentValues,
 } from "@/features/onboarding/schemas";
-import type { LegalDocumentMetadata } from "@/lib/legal/document-policy";
+import type { LegalDocumentMetadata } from "@/lib/legal/documents";
 
 type LegalConsentFormProps = {
   privacyDocument: LegalDocumentMetadata;
@@ -36,19 +36,21 @@ export function LegalConsentForm({
   const form = useForm<LegalConsentValues>({
     resolver: zodResolver(legalConsentSchema),
     defaultValues: {
-      acceptPrivacy: false,
-      acceptTerms: false,
-      privacyVersion: privacyDocument.version,
-      termsVersion: termsDocument.version,
+      privacyAccepted: false,
+      privacyContentHash: privacyDocument.content_hash,
+      privacyDocumentId: privacyDocument.id,
+      termsAccepted: false,
+      termsContentHash: termsDocument.content_hash,
+      termsDocumentId: termsDocument.id,
     },
   });
-  const acceptTerms = useWatch({
+  const termsAccepted = useWatch({
     control: form.control,
-    name: "acceptTerms",
+    name: "termsAccepted",
   });
-  const acceptPrivacy = useWatch({
+  const privacyAccepted = useWatch({
     control: form.control,
-    name: "acceptPrivacy",
+    name: "privacyAccepted",
   });
 
   async function onSubmit(values: LegalConsentValues) {
@@ -90,6 +92,11 @@ export function LegalConsentForm({
       noValidate
       onSubmit={form.handleSubmit(onSubmit)}
     >
+      <input type="hidden" {...form.register("termsDocumentId")} />
+      <input type="hidden" {...form.register("termsContentHash")} />
+      <input type="hidden" {...form.register("privacyDocumentId")} />
+      <input type="hidden" {...form.register("privacyContentHash")} />
+
       {formError ? <Alert variant="destructive">{formError}</Alert> : null}
 
       <div className="border-border space-y-5 rounded-lg border p-4">
@@ -99,7 +106,7 @@ export function LegalConsentForm({
             type="checkbox"
             className="border-input text-primary focus-visible:ring-ring mt-0.5 size-5 shrink-0 rounded focus-visible:ring-3"
             aria-describedby="terms-document-version"
-            {...form.register("acceptTerms")}
+            {...form.register("termsAccepted")}
           />
           <div className="min-w-0 space-y-1">
             <Label htmlFor="accept-terms">利用規約に同意します</Label>
@@ -126,7 +133,7 @@ export function LegalConsentForm({
             type="checkbox"
             className="border-input text-primary focus-visible:ring-ring mt-0.5 size-5 shrink-0 rounded focus-visible:ring-3"
             aria-describedby="privacy-document-version"
-            {...form.register("acceptPrivacy")}
+            {...form.register("privacyAccepted")}
           />
           <div className="min-w-0 space-y-1">
             <Label htmlFor="accept-privacy">
@@ -150,8 +157,8 @@ export function LegalConsentForm({
         </div>
       </div>
 
-      {form.formState.errors.acceptTerms ||
-      form.formState.errors.acceptPrivacy ? (
+      {form.formState.errors.termsAccepted ||
+      form.formState.errors.privacyAccepted ? (
         <FormError>
           利用規約とプライバシーポリシーの両方への同意が必要です。
         </FormError>
@@ -160,7 +167,9 @@ export function LegalConsentForm({
       <Button
         type="submit"
         className="h-10 w-full sm:h-9"
-        disabled={!acceptTerms || !acceptPrivacy || form.formState.isSubmitting}
+        disabled={
+          !termsAccepted || !privacyAccepted || form.formState.isSubmitting
+        }
         aria-busy={form.formState.isSubmitting}
       >
         {form.formState.isSubmitting ? (

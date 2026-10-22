@@ -57,7 +57,7 @@ export async function LegalDocumentPage({
           </CardHeader>
           <CardContent>
             {document ? (
-              <LegalDocumentContent content={document.content} />
+              <LegalDocumentContent content={document.content_markdown} />
             ) : (
               <Alert variant="warning">
                 正式文書を準備中です。公開までしばらくお待ちください。

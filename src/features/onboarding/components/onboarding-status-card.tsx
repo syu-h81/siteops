@@ -12,7 +12,7 @@ import { PageTitle, SectionTitle } from "@/components/ui/typography";
 import { LogoutButton } from "@/features/auth/components/logout-button";
 import { LegalConsentForm } from "@/features/onboarding/components/legal-consent-form";
 import { OrganizationForm } from "@/features/onboarding/components/organization-form";
-import type { LegalDocumentMetadata } from "@/lib/legal/document-policy";
+import type { LegalDocumentMetadata } from "@/lib/legal/documents";
 import type { OnboardingStatus } from "@/lib/onboarding/status";
 
 type VisibleOnboardingStatus = Exclude<

@@ -12,8 +12,9 @@ import { LegalConsentForm } from "@/features/onboarding/components/legal-consent
 
 const baseDocument = {
   content_hash: "a".repeat(64),
-  content_path: "docs/legal/document_v1.0.md",
-  id: "document-1",
+  effective_at: "2026-01-01T00:00:00.000Z",
+  id: "00000000-0000-4000-8000-000000000001",
+  published_at: "2026-01-01T00:00:00.000Z",
   version: "1.0",
 };
 
@@ -23,15 +24,13 @@ describe("法務同意フォーム", () => {
       <LegalConsentForm
         privacyDocument={{
           ...baseDocument,
-          content_path: "docs/legal/privacy_v1.0.md",
+          content_hash: "b".repeat(64),
           document_type: "privacy",
-          id: "privacy-1",
+          id: "00000000-0000-4000-8000-000000000002",
         }}
         termsDocument={{
           ...baseDocument,
-          content_path: "docs/legal/terms_v1.0.md",
           document_type: "terms",
-          id: "terms-1",
         }}
       />,
     );
@@ -42,5 +41,11 @@ describe("法務同意フォーム", () => {
       /<button[^>]*disabled=""[^>]*>.*同意して次へ/,
     );
     expect(markup).toContain("バージョン 1.0");
+    expect(markup).toContain('name="termsAccepted"');
+    expect(markup).toContain('name="privacyAccepted"');
+    expect(markup).toContain('name="termsDocumentId"');
+    expect(markup).toContain('name="termsContentHash"');
+    expect(markup).toContain('name="privacyDocumentId"');
+    expect(markup).toContain('name="privacyContentHash"');
   });
 });

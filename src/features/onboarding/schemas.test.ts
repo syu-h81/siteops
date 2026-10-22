@@ -8,16 +8,21 @@ import {
 describe("オンボーディング入力", () => {
   it("両方に同意した入力だけを許可する", () => {
     const validInput = {
-      acceptPrivacy: true,
-      acceptTerms: true,
-      privacyVersion: "1.0",
-      termsVersion: "1.0",
+      privacyAccepted: true,
+      privacyContentHash: "b".repeat(64),
+      privacyDocumentId: "00000000-0000-4000-8000-000000000002",
+      termsAccepted: true,
+      termsContentHash: "a".repeat(64),
+      termsDocumentId: "00000000-0000-4000-8000-000000000001",
     };
 
     expect(legalConsentSchema.safeParse(validInput).success).toBe(true);
     expect(
-      legalConsentSchema.safeParse({ ...validInput, acceptTerms: false })
+      legalConsentSchema.safeParse({ ...validInput, termsAccepted: false })
         .success,
+    ).toBe(false);
+    expect(
+      legalConsentSchema.safeParse({ ...validInput, userId: "user-1" }).success,
     ).toBe(false);
   });
 

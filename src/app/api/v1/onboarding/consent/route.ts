@@ -81,8 +81,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (
-      terms.version !== parsedInput.data.termsVersion ||
-      privacy.version !== parsedInput.data.privacyVersion
+      terms.id !== parsedInput.data.termsDocumentId ||
+      terms.content_hash !== parsedInput.data.termsContentHash ||
+      privacy.id !== parsedInput.data.privacyDocumentId ||
+      privacy.content_hash !== parsedInput.data.privacyContentHash
     ) {
       return errorResponse(
         409,
@@ -116,10 +118,24 @@ export async function POST(request: NextRequest) {
     }
 
     const { error: consentError } = await supabase.rpc(
-      "accept_current_legal_documents",
+      "accept_legal_documents",
+      {
+        p_privacy_content_hash: parsedInput.data.privacyContentHash,
+        p_privacy_document_id: parsedInput.data.privacyDocumentId,
+        p_terms_content_hash: parsedInput.data.termsContentHash,
+        p_terms_document_id: parsedInput.data.termsDocumentId,
+      },
     );
 
     if (consentError) {
+      if (consentError.code === "P0001") {
+        return errorResponse(
+          409,
+          "legal_documents_changed",
+          "法務文書が更新されました。内容を再確認してください。",
+        );
+      }
+
       return errorResponse(
         500,
         "internal_error",

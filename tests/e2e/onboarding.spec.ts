@@ -11,10 +11,12 @@ test("未認証のオンボーディングAPIを拒否する", async ({ request 
   const [consentResponse, organizationResponse] = await Promise.all([
     request.post("/api/v1/onboarding/consent", {
       data: {
-        acceptPrivacy: true,
-        acceptTerms: true,
-        privacyVersion: "test-only",
-        termsVersion: "test-only",
+        privacyAccepted: true,
+        privacyContentHash: "b".repeat(64),
+        privacyDocumentId: "00000000-0000-4000-8000-000000000002",
+        termsAccepted: true,
+        termsContentHash: "a".repeat(64),
+        termsDocumentId: "00000000-0000-4000-8000-000000000001",
       },
       headers: { origin: "http://localhost:3000" },
     }),
