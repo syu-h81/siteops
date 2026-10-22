@@ -176,6 +176,8 @@ insert into public.legal_document_versions (
   effective_at,
   content_path,
   content_hash,
+  content_markdown,
+  publication_status,
   is_current
 )
 values
@@ -187,6 +189,8 @@ values
     now() - interval '1 day',
     '/legal/terms/test-1',
     repeat('a', 64),
+    E'# Test terms\n',
+    'published',
     true
   ),
   (
@@ -197,6 +201,8 @@ values
     now() - interval '1 day',
     '/legal/privacy/test-1',
     repeat('b', 64),
+    E'# Test privacy policy\n',
+    'published',
     true
   );
 

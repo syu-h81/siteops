@@ -55,16 +55,20 @@ insert into public.legal_document_versions (
   effective_at,
   content_path,
   content_hash,
+  content_markdown,
+  publication_status,
   is_current
 )
 values (
-  '00000000-0000-0000-0000-00000000d001',
+  '00000000-0000-0000-0000-00000000d011',
   'terms',
-  'onboarding-test-terms-1',
+  'onboarding-test-terms-only',
   now() - interval '1 day',
   now() - interval '1 day',
-  '/legal/terms/onboarding-test-1',
+  '/legal/terms/onboarding-test-only',
   repeat('a', 64),
+  E'# Onboarding terms only\n',
+  'published',
   true
 );
 
@@ -87,8 +91,9 @@ select throws_ok(
 
 reset role;
 
-delete from public.legal_document_versions
-where id = '00000000-0000-0000-0000-00000000d001';
+update public.legal_document_versions
+set is_current = false
+where id = '00000000-0000-0000-0000-00000000d011';
 
 insert into public.legal_document_versions (
   id,
@@ -98,6 +103,8 @@ insert into public.legal_document_versions (
   effective_at,
   content_path,
   content_hash,
+  content_markdown,
+  publication_status,
   is_current
 )
 values (
@@ -108,6 +115,8 @@ values (
   now() - interval '1 day',
   '/legal/privacy/onboarding-test-1',
   repeat('b', 64),
+  E'# Onboarding privacy 1\n',
+  'published',
   true
 );
 
@@ -138,6 +147,8 @@ insert into public.legal_document_versions (
   effective_at,
   content_path,
   content_hash,
+  content_markdown,
+  publication_status,
   is_current
 )
 values (
@@ -148,6 +159,8 @@ values (
   now() - interval '1 day',
   '/legal/terms/onboarding-test-1',
   repeat('a', 64),
+  E'# Onboarding terms 1\n',
+  'published',
   true
 );
 
@@ -305,6 +318,8 @@ insert into public.legal_document_versions (
   effective_at,
   content_path,
   content_hash,
+  content_markdown,
+  publication_status,
   is_current
 )
 values (
@@ -315,6 +330,8 @@ values (
   now() - interval '1 hour',
   '/legal/terms/onboarding-test-2',
   repeat('c', 64),
+  E'# Onboarding terms 2\n',
+  'published',
   true
 );
 
@@ -349,6 +366,8 @@ insert into public.legal_document_versions (
   effective_at,
   content_path,
   content_hash,
+  content_markdown,
+  publication_status,
   is_current
 )
 values (
@@ -359,6 +378,8 @@ values (
   now() + interval '1 day',
   '/legal/terms/onboarding-test-future',
   repeat('d', 64),
+  E'# Onboarding future terms\n',
+  'published',
   true
 );
 
@@ -418,6 +439,8 @@ insert into public.legal_document_versions (
   effective_at,
   content_path,
   content_hash,
+  content_markdown,
+  publication_status,
   is_current
 )
 values (
@@ -428,6 +451,8 @@ values (
   now() - interval '1 hour',
   '/legal/terms/onboarding-test-3',
   repeat('e', 64),
+  E'# Onboarding terms 3\n',
+  'published',
   true
 );
 
