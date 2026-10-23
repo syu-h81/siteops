@@ -10,10 +10,12 @@ describe("認証後リダイレクト", () => {
   });
 
   it("外部URLを拒否する", () => {
-    expect(getSafeRedirectPath("https://evil.example/steal")).toBe("/");
-    expect(getSafeRedirectPath("//evil.example/steal")).toBe("/");
-    expect(getSafeRedirectPath("/\\evil.example/steal")).toBe("/");
-    expect(getSafeRedirectPath("javascript:alert(1)")).toBe("/");
+    expect(getSafeRedirectPath("https://evil.example/steal")).toBe(
+      "/onboarding",
+    );
+    expect(getSafeRedirectPath("//evil.example/steal")).toBe("/onboarding");
+    expect(getSafeRedirectPath("/\\evil.example/steal")).toBe("/onboarding");
+    expect(getSafeRedirectPath("javascript:alert(1)")).toBe("/onboarding");
   });
 
   it("不正値には指定されたフォールバックを使う", () => {

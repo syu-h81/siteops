@@ -176,6 +176,8 @@ insert into public.legal_document_versions (
   effective_at,
   content_path,
   content_hash,
+  content_markdown,
+  publication_status,
   is_current
 )
 values
@@ -187,6 +189,8 @@ values
     now() - interval '1 day',
     '/legal/terms/test-1',
     repeat('a', 64),
+    E'# Test terms\n',
+    'published',
     true
   ),
   (
@@ -197,7 +201,20 @@ values
     now() - interval '1 day',
     '/legal/privacy/test-1',
     repeat('b', 64),
+    E'# Test privacy policy\n',
+    'published',
     true
+  );
+
+insert into public.user_legal_consents (user_id, document_version_id)
+values
+  (
+    '00000000-0000-0000-0000-000000000a01',
+    '00000000-0000-0000-0000-000000000d01'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000a01',
+    '00000000-0000-0000-0000-000000000d02'
   );
 
 set local role anon;
@@ -560,14 +577,42 @@ select throws_ok(
 );
 
 select is(
-  (select count(*) from public.accept_current_legal_documents()),
+  (
+    select count(*)
+    from public.accept_legal_documents(
+      '00000000-0000-0000-0000-000000000d01',
+      (
+        select content_hash from public.legal_document_versions
+        where id = '00000000-0000-0000-0000-000000000d01'
+      ),
+      '00000000-0000-0000-0000-000000000d02',
+      (
+        select content_hash from public.legal_document_versions
+        where id = '00000000-0000-0000-0000-000000000d02'
+      )
+    )
+  ),
   2::bigint,
-  'RPC records both current legal documents'
+  'new RPC returns both current legal documents'
 );
 select is(
-  (select count(*) from public.accept_current_legal_documents()),
+  (
+    select count(*)
+    from public.accept_legal_documents(
+      '00000000-0000-0000-0000-000000000d01',
+      (
+        select content_hash from public.legal_document_versions
+        where id = '00000000-0000-0000-0000-000000000d01'
+      ),
+      '00000000-0000-0000-0000-000000000d02',
+      (
+        select content_hash from public.legal_document_versions
+        where id = '00000000-0000-0000-0000-000000000d02'
+      )
+    )
+  ),
   2::bigint,
-  'RPC is idempotent when submitted twice'
+  'new RPC is idempotent when submitted twice'
 );
 select is(
   (select count(*) from public.user_legal_consents),
@@ -606,10 +651,17 @@ reset role;
 select set_config('request.jwt.claims', '{}', true);
 
 select throws_ok(
-  $$select * from public.accept_current_legal_documents()$$,
+  $$
+    select * from public.accept_legal_documents(
+      '00000000-0000-0000-0000-000000000d01',
+      repeat('0', 64),
+      '00000000-0000-0000-0000-000000000d02',
+      repeat('0', 64)
+    )
+  $$,
   '42501',
   'authentication is required',
-  'legal consent RPC rejects a null auth.uid()'
+  'new legal consent RPC rejects a null auth.uid()'
 );
 
 insert into public.user_legal_consents (

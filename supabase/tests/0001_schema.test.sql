@@ -181,12 +181,12 @@ select has_function(
   'legal consent RPC exists'
 );
 select ok(
-  has_function_privilege(
+  not has_function_privilege(
     'authenticated',
     'public.accept_current_legal_documents()',
     'EXECUTE'
   ),
-  'authenticated can execute the legal consent RPC'
+  'authenticated cannot execute the legacy legal consent RPC'
 );
 select ok(
   not has_function_privilege(
@@ -213,7 +213,7 @@ select ok(
       and routine.proname = 'accept_current_legal_documents'
       and routine.pronargs = 0
   ),
-  'legal consent RPC is SECURITY DEFINER'
+  'legacy legal consent RPC remains SECURITY DEFINER while disabled'
 );
 select ok(
   (
@@ -224,7 +224,7 @@ select ok(
       and routine.proname = 'accept_current_legal_documents'
       and routine.pronargs = 0
   ),
-  'legal consent RPC has an empty fixed search_path'
+  'legacy legal consent RPC has an empty fixed search_path'
 );
 select ok(
   not exists (
@@ -240,7 +240,7 @@ select ok(
       and privilege.grantee = 0
       and privilege.privilege_type = 'EXECUTE'
   ),
-  'PUBLIC has no EXECUTE grant on the legal consent RPC'
+  'PUBLIC has no EXECUTE grant on the legacy legal consent RPC'
 );
 select ok(
   not exists (
@@ -254,12 +254,9 @@ select ok(
       and routine.proname = 'accept_current_legal_documents'
       and routine.pronargs = 0
       and privilege.privilege_type = 'EXECUTE'
-      and privilege.grantee not in (
-        routine.proowner,
-        'authenticated'::regrole::oid
-      )
+      and privilege.grantee <> routine.proowner
   ),
-  'only the function owner and authenticated have EXECUTE grants'
+  'only the function owner can execute the legacy legal consent RPC'
 );
 select ok(
   exists (

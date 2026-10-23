@@ -82,35 +82,41 @@ export type Database = {
       legal_document_versions: {
         Row: {
           content_hash: string;
+          content_markdown: string | null;
           content_path: string;
           created_at: string;
           document_type: string;
           effective_at: string;
           id: string;
           is_current: boolean;
+          publication_status: string;
           published_at: string;
           version: string;
         };
         ComputedFields: never;
         Insert: {
           content_hash: string;
+          content_markdown?: string | null;
           content_path: string;
           created_at?: string;
           document_type: string;
           effective_at: string;
           id?: string;
           is_current?: boolean;
+          publication_status?: string;
           published_at: string;
           version: string;
         };
         Update: {
           content_hash?: string;
+          content_markdown?: string | null;
           content_path?: string;
           created_at?: string;
           document_type?: string;
           effective_at?: string;
           id?: string;
           is_current?: boolean;
+          publication_status?: string;
           published_at?: string;
           version?: string;
         };
@@ -472,6 +478,24 @@ export type Database = {
           isOneToOne: false;
           isSetofReturn: true;
         };
+      };
+      accept_legal_documents: {
+        Args: {
+          p_privacy_content_hash: string;
+          p_privacy_document_id: string;
+          p_terms_content_hash: string;
+          p_terms_document_id: string;
+        };
+        Returns: {
+          accepted_at: string;
+          content_hash: string;
+          document_type: string;
+          document_version_id: string;
+        }[];
+      };
+      set_current_legal_document: {
+        Args: { p_document_id: string; p_document_type: string };
+        Returns: undefined;
       };
     };
     Enums: {
