@@ -492,14 +492,16 @@ values (
   false
 );
 
-select public.set_current_legal_document(
-  'privacy',
-  '00000000-0000-0000-0000-000000c4d813'
-);
-insert into public.user_legal_consents (user_id, document_version_id)
-values (
-  '00000000-0000-0000-0000-000000c4d001',
-  '00000000-0000-0000-0000-000000c4d813'
+select throws_ok(
+  $$
+    select public.set_current_legal_document(
+      'privacy',
+      '00000000-0000-0000-0000-000000c4d813'
+    )
+  $$,
+  'P0001',
+  'target legal document is not eligible to become current',
+  'a not-yet-effective document cannot become current'
 );
 
 set local role authenticated;
@@ -510,15 +512,10 @@ select set_config(
 );
 select is(
   private.has_current_legal_consents(),
-  false,
-  'an accepted but not-yet-effective document is false'
+  true,
+  'a rejected future activation preserves the current consent state'
 );
 reset role;
-
-select public.set_current_legal_document(
-  'privacy',
-  '00000000-0000-0000-0000-000000c4d812'
-);
 
 insert into public.legal_document_versions (
   id,

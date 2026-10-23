@@ -1,6 +1,6 @@
 import { expect, type APIRequestContext, test } from "@playwright/test";
 
-const MAILPIT_URL = "http://127.0.0.1:54324";
+const MAILPIT_URL = process.env.TEST_MAILPIT_URL ?? "http://127.0.0.1:54324";
 
 type MailpitAddress = { Address: string };
 type MailpitMessage = {
